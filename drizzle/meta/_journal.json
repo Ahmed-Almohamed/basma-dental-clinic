@@ -1,0 +1,41 @@
+{
+  "version": "7",
+  "dialect": "sqlite",
+  "entries": [
+    {
+      "idx": 0,
+      "version": "6",
+      "when": 1791212353190,
+      "tag": "0000_parched_shard",
+      "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "6",
+      "when": 1791290630687,
+      "tag": "0001_acoustic_spacker_dave",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "6",
+      "when": 1791649935531,
+      "tag": "0002_modern_hellcat",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "6",
+      "when": 1791650872949,
+      "tag": "0003_old_the_professor",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "6",
+      "when": 1791650894327,
+      "tag": "0004_smart_master_mold",
+      "breakpoints": true
+    }
+  ]
+}

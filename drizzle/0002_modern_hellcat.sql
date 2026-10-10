@@ -1,0 +1,1 @@
+ALTER TABLE `appointments` ADD `tooth` text DEFAULT '' NOT NULL;

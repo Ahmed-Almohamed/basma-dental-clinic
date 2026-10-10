@@ -1,0 +1,22 @@
+import {testCookie} from './test-session.mjs';
+import assert from 'node:assert/strict';
+const base='http://127.0.0.1:5173';
+const page=await fetch(base);assert.equal(page.status,200);
+const cookie=await testCookie();
+async function call(entity,data,id){const r=await fetch(base+'/api/clinic',{method:'POST',headers:{Origin:base,cookie,'Content-Type':'application/json'},body:JSON.stringify({entity,data,id})});return {status:r.status,data:await r.json()};}
+const read=async()=>await (await fetch(base+'/api/clinic',{headers:{Origin:base,cookie}})).json();
+const p=await call('patients',{name:'اختبار البطاقات المحلي '+Date.now(),phone:'',birth_date:'',gender:'',allergies:'',history:'',notes:''});assert.equal(p.status,200);
+const year=2100+Math.floor(Math.random()*500),date=`${year}-01-01`,later=`${year}-01-02`;
+const a={patient_id:p.data.id,date,time:'09:00',type:'فحص',status:'confirmed',notes:''};
+const first=await call('appointments',a);assert.equal(first.status,200,JSON.stringify(first));
+const second=await call('appointments',{...a,date:later});assert.equal(second.status,200);
+assert.equal((await call('appointments',{...a,date:later,status:'postponed'},first.data.id)).status,409,'reschedule conflict must preserve original');
+let records=await read();assert.equal(records.appointments.find(x=>x.id===first.data.id).date,date);
+assert.equal((await call('appointments',{...a,date:later,time:'10:00',status:'postponed'},first.data.id)).status,200);
+records=await read();let saved=records.appointments.find(x=>x.id===first.data.id);assert.equal(saved.date,later);assert.equal(saved.time,'10:00');assert.equal(saved.status,'postponed');assert.equal(saved.duration,30);assert.equal(records.appointments.filter(x=>x.id===first.data.id).length,1);
+assert.equal((await call('appointments',{...saved,status:'done'},saved.id)).status,200);
+assert.equal((await call('appointments',{...a,date:later,status:'cancelled'},second.data.id)).status,200);
+assert.equal((await call('appointments',{...a,date:later})).status,200,'cancelled appointment releases slot');
+assert.equal((await call('ledger',{patient_id:p.data.id,kind:'payment',amount:75000,date,method:'cash',note:'اختبار محلي'})).status,200);
+records=await read();assert.equal(records.ledger.filter(x=>x.patient_id===p.data.id).reduce((s,x)=>s+x.amount,0),75000);
+console.log('PASS: page response, default duration, conflict-safe rescheduling, persisted date/time/status, single appointment record, completion, cancellation and incoming payments. Local synthetic data only.');

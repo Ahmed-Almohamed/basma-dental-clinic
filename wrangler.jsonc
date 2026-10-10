@@ -1,0 +1,19 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "basma-dental-clinic",
+  "main": "worker.ts",
+  "compatibility_date": "2026-10-01",
+  "compatibility_flags": [
+    "nodejs_compat"
+  ],
+  "workers_dev": true,
+  "preview_urls": false,
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "basma-clinic-db",
+      "database_id": "d27e3786-2ed5-47dc-959c-442bd292e5b4",
+      "migrations_dir": "drizzle"
+    }
+  ]
+}

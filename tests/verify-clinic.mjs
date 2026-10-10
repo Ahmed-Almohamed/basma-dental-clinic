@@ -1,0 +1,21 @@
+import {testCookie} from './test-session.mjs';
+import assert from 'node:assert/strict';
+const base='http://127.0.0.1:5173';
+let r=await fetch(base+'/api/clinic');assert.equal(r.status,401,'anonymous blocked');
+const cookie=await testCookie();
+async function call(entity,data,id){const r=await fetch(base+'/api/clinic',{method:'POST',headers:{Origin:base,cookie,'Content-Type':'application/json'},body:JSON.stringify({entity,data,id})});return {status:r.status,data:await r.json()};}
+const p=await call('patients',{name:'مريض اختبار محلي '+Date.now(),phone:'',birth_date:'1990-01-01',gender:'male',allergies:'',history:'',notes:'test only'});assert.equal(p.status,200,JSON.stringify(p));
+const pid=p.data.id;const date='2035-01-'+String(10+Math.floor(Math.random()*15)).padStart(2,'0');
+const a={patient_id:pid,date,time:'15:00',duration:30,type:'فحص',status:'confirmed',notes:''};
+const ap=await call('appointments',a);assert.equal(ap.status,200,JSON.stringify(ap));
+assert.equal((await call('appointments',{...a,time:'15:15'})).status,409,'overlap prevented');
+assert.equal((await call('appointments',{...a,time:'15:30'})).status,200,'adjacent slot permitted');
+assert.equal((await call('treatments',{patient_id:pid,tooth:'16',title:'حشوة',cost:120000,status:'done',date,notes:''})).status,200);
+assert.equal((await call('ledger',{patient_id:pid,kind:'payment',amount:40000,date,method:'cash',note:'test'})).status,200);
+assert.equal((await call('ledger',{patient_id:pid,kind:'payment',amount:-1,date,method:'cash',note:''})).status,400,'negative payment prevented');
+assert.equal((await call('treatments',{patient_id:'nonexistent',tooth:'16',title:'علاج',cost:1,status:'done',date,notes:''})).status,400,'foreign patient rejected');
+r=await fetch(base+'/api/clinic',{headers:{Origin:base,cookie}});const saved=await r.json();assert.equal(r.status,200);const balance=saved.treatments.filter(t=>t.patient_id===pid&&t.status==='done').reduce((s,t)=>s+t.cost,0)-saved.ledger.filter(l=>l.patient_id===pid).reduce((s,l)=>s+l.amount,0);assert.equal(balance,80000,'balance persisted correctly');
+const fd=new FormData();fd.set('patient_id',pid);fd.set('file',new File(['%PDF-1.4\nlocal test'], 'test.pdf',{type:'application/pdf'}));r=await fetch(base+'/api/files',{method:'POST',headers:{Origin:base,cookie},body:fd});const uploaded=await r.json();assert.equal(r.status,200,JSON.stringify(uploaded));
+r=await fetch(base+'/api/files?id='+uploaded.id,{headers:{Origin:base,cookie}});assert.equal(r.status,200);assert.equal(await r.text(),'%PDF-1.4\nlocal test');
+r=await fetch(base+'/api/files?id='+uploaded.id);assert.equal(r.status,401);
+console.log('PASS: authentication, patient persistence, appointment overlap and adjacent booking, treatment and payment balance, validation, file upload/download and anonymous denial. Test data remains LOCAL only.');

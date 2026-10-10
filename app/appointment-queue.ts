@@ -1,0 +1,3 @@
+type QueueRow={id:string;date:string;time:string;queue_order?:number};
+export function sortQueue<T extends Record<string,any>>(rows:T[]):T[]{return [...rows].sort((a,b)=>a.date.localeCompare(b.date)||Number(['done','cancelled','missed'].includes(a.status))-Number(['done','cancelled','missed'].includes(b.status))||((a.queue_order??-1)<0?Infinity:a.queue_order!)-((b.queue_order??-1)<0?Infinity:b.queue_order!)||a.time.localeCompare(b.time)||a.id.localeCompare(b.id))}
+export function moveInQueue(ids:string[],from:string,to:string){const result=[...ids],a=result.indexOf(from),b=result.indexOf(to);if(a<0||b<0||a===b)return result;result.splice(a,1);result.splice(b,0,from);return result}

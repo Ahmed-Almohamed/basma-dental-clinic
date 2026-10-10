@@ -1,0 +1,48 @@
+{
+  "name": "basma-dental-clinic",
+  "version": "1.0.0",
+  "private": true,
+  "engines": {
+    "node": ">=22.13.0"
+  },
+  "scripts": {
+    "dev": "vinext dev --port 5173",
+    "build": "vinext build",
+    "typecheck": "tsc --noEmit",
+    "db:generate": "drizzle-kit generate",
+    "db:migrate:local": "wrangler d1 migrations apply DB --local",
+    "db:migrate:remote": "wrangler d1 migrations apply DB --remote",
+    "deploy": "npm run build && wrangler deploy --config dist/server/wrangler.json",
+    "test": "node tests/run.mjs"
+  },
+  "dependencies": {
+    "drizzle-orm": "0.45.2",
+    "lucide-react": "^1.31.0",
+    "next": "16.4.0",
+    "react": "19.3.0",
+    "react-dom": "19.3.0",
+    "zod": "^3.25.76"
+  },
+  "devDependencies": {
+    "@cloudflare/vite-plugin": "1.63.1",
+    "@cloudflare/workers-types": "^5.20261006.1",
+    "@types/node": "22.19.19",
+    "@types/react": "19.2.14",
+    "@types/react-dom": "19.2.3",
+    "@vitejs/plugin-react": "6.0.2",
+    "@vitejs/plugin-rsc": "^0.5.34",
+    "drizzle-kit": "0.31.11",
+    "react-server-dom-webpack": "19.3.0",
+    "typescript": "5.9.3",
+    "vinext": "1.1.0",
+    "vite": "8.3.4",
+    "wrangler": "4.149.0"
+  },
+  "type": "module",
+  "description": "Arabic dental clinic management by SY0S",
+  "author": "SY0S",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Ahmed-Almohamed/basma-dental-clinic.git"
+  }
+}

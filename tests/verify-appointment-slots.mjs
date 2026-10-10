@@ -1,0 +1,13 @@
+import assert from 'node:assert/strict';
+import {slotAvailable,slotConflict,addDays} from '../app/appointment-slots.ts';
+const date='2030-05-01',appointments=[{id:'long',date,time:'10:15',duration:45,status:'confirmed'}];
+assert(slotConflict(appointments,date,'10:00',30),'partial overlap blocks previous slot');
+assert(slotConflict(appointments,date,'10:30',30),'long appointments block every overlapping slot');
+assert(slotAvailable(appointments,date,'11:00',30),'adjacent slot is available');
+assert(slotAvailable(appointments,date,'10:30',30,'long'),'rescheduling ignores itself');
+assert(slotAvailable([{...appointments[0],status:'cancelled'}],date,'10:30'));
+assert(!slotAvailable([{...appointments[0],status:'done'}],date,'10:30'));
+assert(slotAvailable(appointments,'2030-05-02','10:30'));
+assert(!slotAvailable([],date,'23:30',60));assert(!slotAvailable([],date,''));assert(!slotAvailable([],date,'24:00'));
+assert.equal(addDays('2030-12-31',1),'2031-01-01');
+console.log('PASS: booked slots disabled, partial and long overlaps, adjacent slots, self-exclusion on reschedule, cancellation, completed slots, day isolation and midnight boundary.');
