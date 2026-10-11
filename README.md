@@ -17,11 +17,11 @@
 
 | Area | Included |
 | --- | --- |
-| 📅 Appointments | Create a patient and appointment together; suggest existing patients by name or phone; choose a day, available time, session type and tooth. |
+| 📅 Appointments | Create a patient and appointment together; suggest existing patients by name or phone; choose a day, available time and multiple treatments with their agreed prices. Reuse existing treatments across visits without charging twice. |
 | 👤 Patient records | Contact details, birth date, allergies, medical history, notes, visits, treatment plan, receipts and attachments. |
 | 🦷 Dental chart | Interactive permanent and primary teeth using FDI numbering; treatment state per tooth; general sessions without a specific tooth. |
 | ⏱️ Daily queue | Reorder pending appointments by drag or accessible move buttons; preserve the booked time. Completed and cancelled visits remain outside the waiting order. |
-| 💳 Payments | Treatment-plan totals, receipts, remaining balance and optional payment at session completion. Duplicate completion requests do not duplicate receipts. |
+| 💳 Payments | One patient account with treatment-plan totals, unknown-price alerts, receipts, balance and a live payment preview at session completion. Duplicate completion requests do not duplicate receipts. |
 | 📂 Attachments | Authenticated JPG, PNG and PDF uploads/downloads, up to 10 MiB each. |
 | 🔎 Search & export | Arabic name and phone search; CSV export of the visible patient search results; JSON export of clinic records. |
 | 🔐 Account | Private clinic login, mandatory initial credential change, editable username/password, expiring sessions and login throttling. |
@@ -31,6 +31,8 @@ The interface is Arabic and right-to-left. Dates use **Asia/Damascus** and amoun
 ## 🖼️ Interface
 
 ![Appointment form](docs/screenshots/booking.png)
+
+![Treatment totals and payment preview](docs/screenshots/treatment-payments.png)
 
 ## 🛠️ Stack
 
@@ -101,7 +103,7 @@ wrangler.jsonc       Cloudflare resource bindings
 
 ## 📌 Current scope
 
-This is a **single-clinic, single-account** application. It does not provide separate staff roles, prescriptions, insurance processing, automatic reminders or a direct imaging-device connection. Booking a session does not automatically create a priced treatment plan. Add treatment costs from the patient's treatment tab before relying on the remaining balance.
+This is a **single-clinic, single-account** application. It does not provide separate staff roles, prescriptions, insurance processing, automatic reminders or a direct imaging-device connection. Add priced treatments directly while booking, or from the patient's treatment plan. Blank prices remain explicitly unknown; zero means free. Repeat visits reference existing treatments instead of creating new charges. All receipts reduce the patient's overall balance.
 
 Attachments currently share D1 storage with records and use base64 chunks. This is suitable for a small installation; storage grows faster than the original file sizes. Monitor capacity and move attachments to object storage before a large imaging archive accumulates. [Cloudflare D1 limits](https://developers.cloudflare.com/d1/platform/limits/) apply.
 

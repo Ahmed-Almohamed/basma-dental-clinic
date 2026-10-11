@@ -38,3 +38,7 @@ Reviewed sign-in, the appointment form, session selection, tooth selection and a
 ## Limits of verification
 
 This is a functional and regression review, not an independent penetration test or medical-data compliance certification. No live medical records were used in destructive tests. Large-scale performance, long-term storage growth, multi-user roles and imaging-device integration are outside this release's scope.
+
+## Treatment-plan update — 11 October 2026
+
+The additional regression script checks atomic multi-treatment booking, concurrent retries, conflicting slots without orphan records, plan additions, patient ownership, unknown versus zero prices, edited prices, cancelled treatments, and repeated sessions without duplicate charges. A 700,000 SYP plan with successive payments of 200,000 and 100,000 leaves 400,000 SYP. A browser walkthrough also created a new patient with two priced treatments, recorded a payment, opened follow-up booking, and added an unknown-price treatment. Desktop and 390-pixel mobile layouts were reviewed with synthetic local records.

@@ -1,8 +1,9 @@
+import {treatmentIds,validTreatments} from './treatment-plan';
 import {z} from 'zod';
 import {database} from '../../../db/store';
 const json=(data:unknown,status=200)=>Response.json(data,{status,headers:{'Cache-Control':'no-store'}});
 const id=z.string().min(1).max(80);
-const completion=z.object({appointment_id:id,amount:z.number().int().min(0).max(1000000000000),method:z.enum(['cash','transfer']),outcome:z.enum(['followup','finished'])});
+const completion=z.object({appointment_id:id,treatment_ids:treatmentIds.optional(),amount:z.number().int().min(0).max(1000000000000),method:z.enum(['cash','transfer']),outcome:z.enum(['followup','finished'])});
 const reorder=z.object({date:z.string().regex(/^\d{4}-\d{2}-\d{2}$/),ids:z.array(id).min(1).max(500)}).refine(v=>new Set(v.ids).size===v.ids.length);
 type Body={entity:string;data?:unknown};
 export async function sessionAction(body:Body,db:ReturnType<typeof database>,owner:string):Promise<Response|null>{
@@ -11,18 +12,21 @@ export async function sessionAction(body:Body,db:ReturnType<typeof database>,own
   const d=parsed.data;
   const a=await db.prepare('SELECT * FROM appointments WHERE id=? AND owner=?').bind(d.appointment_id,owner).first<Record<string,any>>();
   if(!a)return json({error:'الموعد غير موجود.'},404);
+  const ids=(d.treatment_ids??JSON.parse(a.treatment_ids||'[]')).slice().sort() as string[];const links=JSON.stringify(ids);
   const paymentId='session:'+d.appointment_id;
   async function existingResult(){
-   const saved=await db.prepare('SELECT status,completion_outcome FROM appointments WHERE id=? AND owner=?').bind(d.appointment_id,owner).first<Record<string,any>>();
+   const saved=await db.prepare('SELECT status,completion_outcome,treatment_ids FROM appointments WHERE id=? AND owner=?').bind(d.appointment_id,owner).first<Record<string,any>>();
    const payment=await db.prepare('SELECT amount,method FROM ledger WHERE id=? AND owner=?').bind(paymentId,owner).first<Record<string,any>>();
-   if(saved?.status==='done'&&saved.completion_outcome===d.outcome&&Number(payment?.amount||0)===d.amount&&(!d.amount||payment?.method===d.method))return json({ok:true,id:d.appointment_id});
+   if(saved?.status==='done'&&JSON.stringify(JSON.parse(saved.treatment_ids||'[]').sort())===links&&saved.completion_outcome===d.outcome&&Number(payment?.amount||0)===d.amount&&(!d.amount||payment?.method===d.method))return json({ok:true,id:d.appointment_id});
    return json({error:'تغيّرت حالة الجلسة أو تم حفظها سابقاً. حدّث السجلات قبل المتابعة.'},409);
   }
   if(['done','cancelled','missed'].includes(a.status))return existingResult();
+  if(!await validTreatments(db,owner,a.patient_id,ids))return json({error:'راجع علاجات الجلسة؛ يجب أن تخص المريض وألا تكون ملغية.'},400);
   const timestamp=new Date().toISOString();const paidDate=new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Damascus',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date());
   const statements=[];
   if(d.amount>0)statements.push(db.prepare("INSERT INTO ledger (id,owner,patient_id,kind,amount,date,method,note,created_at) SELECT ?,owner,patient_id,'payment',?,?,?,?,? FROM appointments WHERE id=? AND owner=? AND status NOT IN ('done','cancelled','missed')").bind(paymentId,d.amount,paidDate,d.method,'دفعة جلسة '+a.date+' · '+a.time,timestamp,d.appointment_id,owner));
-  statements.push(db.prepare("UPDATE appointments SET status='done',completion_outcome=?,completed_at=? WHERE id=? AND owner=? AND status NOT IN ('done','cancelled','missed')").bind(d.outcome,timestamp,d.appointment_id,owner));
+  if(ids.length)statements.push(db.prepare("UPDATE treatments SET status=CASE WHEN ?='finished' THEN 'done' WHEN status='done' THEN 'done' ELSE 'active' END WHERE owner=? AND patient_id=? AND id IN (SELECT value FROM json_each(?)) AND EXISTS (SELECT 1 FROM appointments WHERE id=? AND owner=? AND status NOT IN ('done','cancelled','missed'))").bind(d.outcome,owner,a.patient_id,links,d.appointment_id,owner));
+  statements.push(db.prepare("UPDATE appointments SET status='done',completion_outcome=?,completed_at=?,treatment_ids=? WHERE id=? AND owner=? AND status NOT IN ('done','cancelled','missed')").bind(d.outcome,timestamp,links,d.appointment_id,owner));
   const results=await db.batch(statements);
   if(!results[results.length-1].meta.changes)return existingResult();
   return json({ok:true,id:d.appointment_id});
