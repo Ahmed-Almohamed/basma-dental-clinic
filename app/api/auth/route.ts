@@ -18,7 +18,7 @@ export async function POST(request:Request){try{
  let s=null;
  if(d.action==='change'){s=await readSession(request.headers.get('cookie')||'');if(!s)return json({error:'يلزم تسجيل الدخول.'},401);}
  const password=d.action==='change'?d.currentPassword:d.password;
- if(typeof password!=='string'||password.length>128||!await verifyPassword(password,account.password_hash)||(d.action==='login'&&d.username!==account.username))return json({error:'بيانات الدخول غير صحيحة.'},401);
+ if(typeof password!=='string'||password.length>128||!await verifyPassword(password,account.password_hash)||(d.action==='login'&&(typeof d.username!=='string'||d.username.trim().toLowerCase()!==account.username.trim().toLowerCase())))return json({error:'بيانات الدخول غير صحيحة.'},401);
  const token=hex(crypto.getRandomValues(new Uint8Array(32)).buffer),sessionId=await digest(token),queries=[];
  if(d.action==='change'){
   if(typeof d.username!=='string'||d.username.trim().length<3||d.username.trim().length>80||typeof d.newPassword!=='string'||d.newPassword.length<12||d.newPassword.length>128||d.newPassword!==d.confirmPassword||d.newPassword===password)return json({error:'اسم الدخول 3 أحرف على الأقل، وكلمة مرور جديدة من 12 حرفاً على الأقل، مع تأكيد مطابق.'},400);
