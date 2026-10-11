@@ -3,9 +3,9 @@ import {database} from '../../../db/store';
 export const planItem=z.object({id:z.string().uuid(),title:z.string().trim().min(1).max(160),tooth:z.string().regex(/^(|general|[1-4][1-8]|[5-8][1-5])$/).default(''),cost:z.number().int().min(0).max(1000000000000).nullable()});
 export const planItems=z.array(planItem).max(20).default([]).refine(v=>new Set(v.map(t=>t.id)).size===v.length);
 export const treatmentIds=z.array(z.string().min(1).max(80)).max(40).refine(v=>new Set(v).size===v.length);
-export async function validTreatments(db:ReturnType<typeof database>,owner:string,pid:string,ids:string[]){
+export async function validTreatments(db:ReturnType<typeof database>,owner:string,pid:string,ids:string[],includeCancelled=false){
  if(!ids.length)return true;
- const r=await db.prepare("SELECT COUNT(*) AS n FROM treatments WHERE owner=? AND patient_id=? AND status<>'cancelled' AND id IN (SELECT value FROM json_each(?))").bind(owner,pid,JSON.stringify(ids)).first<{n:number}>();return r?.n===ids.length;
+ const r=await db.prepare("SELECT COUNT(*) AS n FROM treatments WHERE owner=? AND patient_id=? AND (?=1 OR status<>'cancelled') AND id IN (SELECT value FROM json_each(?))").bind(owner,pid,includeCancelled?1:0,JSON.stringify(ids)).first<{n:number}>();return r?.n===ids.length;
 }
 export async function fingerprint(value:unknown){return Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256',new TextEncoder().encode(JSON.stringify(value))))).map(b=>b.toString(16).padStart(2,'0')).join('');}
 export async function addTreatmentPlan(raw:unknown,db:ReturnType<typeof database>,owner:string){
